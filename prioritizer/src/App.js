@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import _ from 'lodash';
 import './App.css';
 
@@ -30,112 +30,100 @@ function getNewRating(myRating, opponentRating, myGameResult) {
 
 function ChoiceCard(props) {
   return (
-    <div className="choice-card" onClick={props.onClick}>{props.text}</div>
+    <div id={props.id} className="choice-card" onClick={props.onClick}>{props.text}</div>
   );
 }
 
-class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.choices = [
-      {
-        text: 'cats',
-        elo: BASE_ELO,
-      },
-      {
-        text: 'dogs',
-        elo: BASE_ELO,
-      },
-      {
-        text: 'elephant',
-        elo: BASE_ELO,
-      },
-      {
-        text: 'frog',
-        elo: BASE_ELO,
-      },
-      {
-        text: 'gorilla',
-        elo: BASE_ELO,
-      },
-      {
-        text: 'human',
-        elo: BASE_ELO,
-      },
-    ];
-    this.state = {
-      choice1: {
-        text: '',
-        index: 0,
-      },
-      choice2: {
-        text: '',
-        index: 1,
-      },
-    };
-  }
+let allCombos = [];
 
-  initializeCombos() {
-    this.allCombos = generateCombinations(this.choices.length);
-    const firstCombo = this.allCombos.pop();
+let choices = [
+  {
+    text: 'hungryhungryhippo',
+    elo: BASE_ELO,
+  },
+  {
+    text: 'cats',
+    elo: BASE_ELO,
+  },
+  {
+    text: 'dogs',
+    elo: BASE_ELO,
+  },
+  {
+    text: 'elephant',
+    elo: BASE_ELO,
+  },
+  {
+    text: 'frog',
+    elo: BASE_ELO,
+  },
+  {
+    text: 'gorilla',
+    elo: BASE_ELO,
+  },
+];
 
-    this.setState({
-      choice1: {
-        text: this.choices[firstCombo[0]].text,
-        index: firstCombo[0],
-      },
-      choice2: {
-        text: this.choices[firstCombo[1]].text,
-        index: firstCombo[1],
-      },
-      pasteText: this.getPasteText(),
+function App() {
+  const [choice1, setChoice1] = useState({ text: '', index: 0 });
+  const [choice2, setChoice2] = useState({ text: '', index: 1 });
+  const [pasteText, setPasteText] = useState('');
+  const [mode, setMode] = useState('vote');
+
+  function initializeCombos() {
+    allCombos = generateCombinations(choices.length);
+    const firstCombo = allCombos.pop();
+
+    setChoice1({
+      text: choices[firstCombo[0]].text,
+      index: firstCombo[0],
     });
+    setChoice2({
+      text: choices[firstCombo[1]].text,
+      index: firstCombo[1],
+    });
+    setPasteText(getPasteText());
   }
 
-  getPasteText() {
-    const sortedChoices = _.sortBy(this.choices, ['elo']).reverse();
+  function getPasteText() {
+    const sortedChoices = _.sortBy(choices, ['elo']).reverse();
     return sortedChoices.map(choice => {
       return `${choice.text}, ${choice.elo}`.trim();
     }).join('\n');
   }
 
-  handleClick(index) {
-    const index1 = this.state.choice1.index;
-    const index2 = this.state.choice2.index;
-    const oldRating1 = this.choices[index1].elo;
-    const oldRating2 = this.choices[index2].elo;
+  function handleClick(index) {
+    const index1 = choice1.index;
+    const index2 = choice2.index;
+    const oldRating1 = choices[index1].elo;
+    const oldRating2 = choices[index2].elo;
 
-    this.choices[index1].elo = getNewRating(oldRating1, oldRating2, index === 0 ? 1 : 0);
-    this.choices[index2].elo = getNewRating(oldRating2, oldRating1, index === 1 ? 1 : 0);
+    choices[index1].elo = getNewRating(oldRating1, oldRating2, index === 0 ? 1 : 0);
+    choices[index2].elo = getNewRating(oldRating2, oldRating1, index === 1 ? 1 : 0);
 
-    if (!this.allCombos.length) {
+    if (!allCombos.length) {
       alert('All Over');
-      this.initializeCombos();
+      initializeCombos();
     }
 
-    const combo = this.allCombos.pop();
+    const combo = allCombos.pop();
 
-    this.setState({
-      choice1: {
-        text: this.choices[combo[0]].text,
-        index: combo[0],
-      },
-      choice2: {
-        text: this.choices[combo[1]].text,
-        index: combo[1],
-      },
-      pasteText: this.getPasteText(),
+    setChoice1({
+      text: choices[combo[0]].text,
+      index: combo[0],
     });
+    setChoice2({
+      text: choices[combo[1]].text,
+      index: combo[1],
+    });
+    setPasteText(getPasteText());
   }
 
-  handleChange(event) {
-    this.setState({
-      pasteText: event.target.value,
-    });
+  function handleChange(event) {
+    setPasteText(event.target.value);
 
     const lines = event.target.value.split('\n');
     
-    this.choices = lines.map(line => {
+    choices = lines.map(line => {
       const tokens = line.split(',');
       let elo = BASE_ELO;
       let text = line;
@@ -147,38 +135,56 @@ class App extends React.Component {
       return { elo, text };
     });
 
-    this.initializeCombos();
+    localStorage.setItem();
+
+    initializeCombos();
   }
 
-  componentDidMount(){
-    this.initializeCombos();
+  useEffect(() => {
+    initializeCombos();
+  }, []);
 
-    document.addEventListener('keydown', event => {
+  useEffect(() => {
+    const f = event => {
       if (event.which === 37 || event.which === 65) {
         // Left arrow or A
-        this.handleClick(0);
+        handleClick(0);
       } else if (event.which === 39 || event.which === 68) {
         // Right arrow or D
-        this.handleClick(1);
+        handleClick(1);
+      } else if (event.which === 27) {
+        // Escape
+        setMode(mode === 'vote' ? 'edit' : 'vote');
       }
-    });
-  }
+    };
 
-  render() {
-    return (
-      <div>
+    document.addEventListener('keydown', f);
+
+    return () => document.removeEventListener('keydown', f);
+  }, [mode]);
+
+  return (
+    <div>
+      <div id="choice-grid">
         <ChoiceCard
-          text={this.state.choice1.text}
-          onClick={() => this.handleClick(0)}
+          id="choice-card-1"
+          text={choice1.text}
+          onClick={() => handleClick(0)}
         />
         <ChoiceCard
-          text={this.state.choice2.text}
-          onClick={() => this.handleClick(1)}
+          id="choice-card-2"
+          text={choice2.text}
+          onClick={() => handleClick(1)}
         />
-        <textarea value={this.state.pasteText} onChange={event => this.handleChange(event)}></textarea>
       </div>
-    );
-  }
+      {
+        mode === 'edit' &&
+        <div id="text-area-wrapper">
+          <textarea value={pasteText} onChange={event => handleChange(event)}></textarea>
+        </div>
+      }
+    </div>
+  );
 }
 
 export default App;
